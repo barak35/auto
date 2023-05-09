@@ -1,7 +1,6 @@
 import selenium
 import requests
-import datetime
-import zipfile
+import datetime 
 import getpass
 from selenium import webdriver
 import chromedriver_autoinstaller
@@ -18,48 +17,68 @@ import hunetStart
 import safeedu
 import os
  
-import AutoUpdate
+import shutil
  
 application_path = os.getcwd()
 
-t = ''
-
-def extract(file_name):
-    with zipfile.ZipFile(file_name, 'r') as zip_ref:
-        zip_ref.extractall(os.path.join(application_path, 'update', 'tmp'))
+t = '' 
 
 def autoUpdater():
-    MY_API_KEY = "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"
+    print('업데이트 버전 확인...')
+    
+    MY_API_KEY = "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"
     OWNER = 'barak35'
     REPO = 'auto'
-    API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
-    print(API_SERVER_URL)
+    API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}" 
 
     res = requests.get(f"{API_SERVER_URL}/releases/latest", auth=(OWNER, MY_API_KEY))  # 
     if res.status_code != 200:
-        print(datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S"), "업데이트 체크 실패")
-    print(res.json())
+        print(datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S"), "업데이트 체크 실패") 
+        return False
     
-    """
+    dataJson = res.json()
+    
+    try:
+        v = open("version","r")
+    except:
+        #파일이 없으니 새로 작성..
+        v = open("version","w")
+        v.write(str(dataJson['assets'][0]["id"]))
+        v.close()
+    
     with open("version", "r") as f:
-        now_version = f.read()
-        if str(res["assets"][0]["id"]) != now_version:
+        now_version = f.read() 
+        if str(dataJson['assets'][0]["id"]) != now_version:
             print("====================")
             print("업데이트 가능 버전을 발견했습니다.")
-            print(f'''{res["name"]} / {res["tag_name"]}''')  # 해당 릴리즈의 제목과 태그명을 확인할 수 있음
-            print(f'''{res["body"]}''')  # 해당 릴리즈의 내용을 확인할 수 있음
-            
-            download_url = res["assets"][0]["url"]
+            print(f'''{dataJson["name"]} / {dataJson["tag_name"]}''')  # 해당 릴리즈의 제목과 태그명을 확인할 수 있음
+            print(f'''{dataJson["body"]}''')  # 해당 릴리즈의 내용을 확인할 수 있음
+    
+            download_url = dataJson['assets'][0]["url"] 
             contents = requests.get(download_url, headers={'Accept': 'application/octet-stream'}, stream=True)  # 헤더와 stream을 지정하여 파일을 다운받을 수 있도록 했다.
 
             os.makedirs(os.path.join(application_path, "update"), exist_ok=True)  # 업데이트할 파일이 겹치지 않도록 update 폴더 생성
 
             # 다운받은 데이터를 태그명으로 저장
-            with open(os.path.join(application_path, 'update', f'''{res["tag_name"]}.zip'''), "wb") as f:
+            with open(os.path.join(application_path, 'update', f'''auto_{dataJson["tag_name"]}.exe'''), "wb") as f:
                 for chunk in contents.iter_content(chunk_size=1024*1024):
                     f.write(chunk)
-    """
-    return False
+            
+            shutil.copytree(os.path.join(application_path, "update"), application_path, ignore=shutil.ignore_patterns("update-check.exe",), dirs_exist_ok=True)  # update/tmp에 압축해제된 데이터를 루트에 복사하며, update-check.exe는 복사하지 않음
+
+            # 새로운 버전을 입력해 줌
+            with open(os.path.join(application_path, "version"), "w") as f:
+                f.write(str(dataJson["assets"][0]["id"]))
+
+            shutil.rmtree(os.path.join(application_path, "update"))  # 업데이트 임시 폴더 삭제
+
+            print(datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S"), "업데이트 완료")
+
+            os.startfile(os.path.join(application_path, f'auto_{dataJson["tag_name"]}.exe'))  # 업데이트 완료 후 메인 프로그램을 다시 실행시켜줌
+            return True
+    
+    print('최신 버전 입니다!')
+    return True
     
 def typecheck():
     global t 
@@ -79,7 +98,7 @@ def typecheck():
 def main():
     #업데이트 체크.. 
     if autoUpdater() == False:
-        return False
+        return
     
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True) 
