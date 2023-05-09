@@ -30,9 +30,10 @@ def extract(file_name):
 
 def autoUpdater():
     MY_API_KEY = "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"
-    OWNER = 'owner'
-    REPO = 'repo'
+    OWNER = 'barak35'
+    REPO = 'auto'
     API_SERVER_URL = f"https://api.github.com/repos/{OWNER}/{REPO}"
+    print(API_SERVER_URL)
 
     res = requests.get(f"{API_SERVER_URL}/releases/latest", auth=(OWNER, MY_API_KEY))  # 
     if res.status_code != 200:
@@ -58,6 +59,7 @@ def autoUpdater():
                 for chunk in contents.iter_content(chunk_size=1024*1024):
                     f.write(chunk)
     """
+    return False
     
 def typecheck():
     global t 
@@ -76,7 +78,8 @@ def typecheck():
         
 def main():
     #업데이트 체크.. 
-    autoUpdater()
+    if autoUpdater() == False:
+        return False
     
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True) 
